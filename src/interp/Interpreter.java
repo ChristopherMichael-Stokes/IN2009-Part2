@@ -29,6 +29,8 @@ import syntaxtree.interp.*;
  */
 public class Interpreter extends VisitorAdapter<Integer> {
 
+    private static final int FALSE = 0, TRUE = 1;
+
     /**
      * The symbol table.
      */
@@ -81,18 +83,128 @@ public class Interpreter extends VisitorAdapter<Integer> {
     }
 
     /*=============================================*/
-    /* Expression visitors (all return an Integer) */
-    /*=============================================*/
-    // TODO
+ /* Expression visitors (all return an Integer) */
+ /*=============================================*/
+    public Integer visit(ExpInteger n) {        
+        return n.i;
+    }
+
+    public Integer visit(ExpArrayLength n) {    //TODO
+        return -1;
+    }
+
+    public Integer visit(ExpArrayLookup n) {    //TODO
+
+        return -1;
+    }
+
+    public Integer visit(ExpCall n) {    //TODO
+
+        return -1;
+    }
+
+    public Integer visit(ExpTrue n) {
+        return TRUE;
+    }
+    
+    public Integer visit(ExpFalse n) {
+        return FALSE;
+    }
+
+    public Integer visit(ExpIsnull n) {    //TODO
+        
+
+        return -1;
+    }
+
+    public Integer visit(ExpNewArray n) {    //TODO
+        
+        return -1;
+    }
+
+    public Integer visit(ExpNewObject n) {    //TODO
+
+        return -1;
+    }
+
+    public Integer visit(ExpNot n) {    //TODO
+        int val = n.accept(this);
+        return val == 0 ? 1 : 0;
+    }
+
+    public Integer visit(ExpOp n) {    //TODO
+        ExpOp.Op op = n.op;
+        Integer exp1 = n.e1.accept(this), exp2 = n.e2.accept(this);
+        switch(op) {
+            case AND:
+                return (exp1 & exp2) == exp1 ? TRUE : FALSE;
+            case DIV:
+                if (exp2 == 0) 
+                    return Integer.MIN_VALUE;
+
+                return exp1 / exp2;
+            case EQUALS:
+                return exp1 == exp2 ? TRUE : FALSE;
+            case LESSTHAN:
+                return exp1 < exp2 ? TRUE : FALSE;
+            case MINUS:
+                return exp1 - exp2;
+            case PLUS:
+                return exp1 + exp2;
+            case TIMES:
+                return exp1 * exp2;
+            default:
+                return -1;
+        }
+    }
+
+    public Integer visit(ExpSelf n) {    //TODO
+        return mooplRunTime.getFrameEntry(-2);
+    }
+
+   
+
+    public Integer visit(ExpVar n) {    //TODO
+        
+        return -1;
+    }
 
     /*======================================*/
-    /* Statement visitors (all return null) */
-    /*======================================*/
-    // TODO
+ /* Statement visitors (all return null) */
+ /*======================================*/
+    public Integer visit(StmArrayAssign n) {    //TODO
+        return null;
+    }
+
+    public Integer visit(StmAssign n) {    //TODO
+
+        return null;
+    }
+
+    public Integer visit(StmBlock n) {    //TODO
+
+        return null;
+    }
+
+    public Integer visit(StmCall n) {    //TODO
+
+        return null;
+    }
+
+    public Integer visit(StmIf n) {    //TODO
+
+        return null;
+    }
+
+    public Integer visit(StmOutput n) {
+        int v = n.e.accept(this);
+        System.out.println(v);
+        return null;
+    }
 
     /*=====================================*/
-    /* ICommand visitors (all return null) */
-    /*=====================================*/
+ /* ICommand visitors (all return null) */
+ /*=====================================*/
     // String id
     // List<Exp> es
     public Integer visit(ICall n) {
@@ -109,7 +221,7 @@ public class Interpreter extends VisitorAdapter<Integer> {
         // class (class name null)
         ClassSignature dummyClassSig = symTab.getClassSignature(null);
         MethodSignature procSig = dummyClassSig.getMethodSignature(n.id);
-        
+
         // find the "code" (MethodDecl) for the procedure
         MethodDecl procCode = procSig.getMethodDecl();
 

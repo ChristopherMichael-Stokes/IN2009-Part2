@@ -16,7 +16,7 @@ public abstract class AST {
     
     /**
      * Initialise the error-reporting tag list.
-     * @see AST.globalTag(String)
+     * @see AST#globalTag(String)
      */
     public AST() {
         if (globalTags != null) {

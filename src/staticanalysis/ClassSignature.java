@@ -86,7 +86,7 @@ public class ClassSignature {
      *
      * @return the list of field names declared in this class signature (does
      * NOT include inherited fields)
-     * @see SymbolTable.getAllFieldNames()
+//     * @see SymbolTable.getAllFieldNames()
      */
     public List<String> getImmediateFieldNames() {
         List<String> fieldNames = new LinkedList<String>();
