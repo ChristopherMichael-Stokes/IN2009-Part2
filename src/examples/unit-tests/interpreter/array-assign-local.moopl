@@ -4,4 +4,5 @@ proc main() {
   a = new arrayof(int)[1];
   a[0] = 99;
   output a[0];
+  output a.length;
 }

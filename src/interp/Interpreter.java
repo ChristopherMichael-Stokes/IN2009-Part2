@@ -1,7 +1,9 @@
 package interp;
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 import staticanalysis.ClassSignature;
 import staticanalysis.MethodSignature;
 import visitor.VisitorAdapter;
@@ -29,7 +31,10 @@ import syntaxtree.interp.*;
  */
 public class Interpreter extends VisitorAdapter<Integer> {
 
-    private static final int FALSE = 0, TRUE = 1;
+    /**
+     * constants
+     */
+    private static final int FALSE = 0, TRUE = 1, SELF = -2;
 
     /**
      * The symbol table.
@@ -85,63 +90,65 @@ public class Interpreter extends VisitorAdapter<Integer> {
     /*=============================================*/
  /* Expression visitors (all return an Integer) */
  /*=============================================*/
-    public Integer visit(ExpInteger n) {        
+    public Integer visit(ExpInteger n) {
         return n.i;
     }
 
-    public Integer visit(ExpArrayLength n) {    //TODO
-        return -1;
+    public Integer visit(ExpArrayLength n) {
+        return mooplRunTime.deref(n.e.accept(this)).elements.length;
     }
 
-    public Integer visit(ExpArrayLookup n) {    //TODO
-
-        return -1;
+    public Integer visit(ExpArrayLookup n) {
+        MooplObject array = mooplRunTime.deref(n.e1.accept(this));
+        return array.elements[n.e2.accept(this)];
     }
 
-    public Integer visit(ExpCall n) {    //TODO
-
-        return -1;
+    public Integer visit(ExpCall n) {
+        return call(n.e.accept(this), n.id, n.es, n.getClass());
     }
 
     public Integer visit(ExpTrue n) {
         return TRUE;
     }
-    
+
     public Integer visit(ExpFalse n) {
         return FALSE;
     }
 
-    public Integer visit(ExpIsnull n) {    //TODO
-        
-
-        return -1;
+    public Integer visit(ExpIsnull n) {
+        return n.e.accept(this) == 0 ? TRUE : FALSE;
     }
 
-    public Integer visit(ExpNewArray n) {    //TODO
-        
-        return -1;
+    public Integer visit(ExpNewArray n) {
+        Integer length = n.e.accept(this);
+        return mooplRunTime.allocArrayObject(length, n.t);
     }
 
-    public Integer visit(ExpNewObject n) {    //TODO
+    public Integer visit(ExpNewObject n) {
+        Integer address = mooplRunTime.allocClassInstance(n.es.size(), n.id);
+        MooplObject mo = mooplRunTime.deref(address);
+        String classType = mo.type.toString();
 
-        return -1;
+        //call constructor 
+        //constructor is a proc, so pass a StmCall
+        call(address, mo.type.toString(), n.es, StmCall.class);
+        return address;
     }
 
-    public Integer visit(ExpNot n) {    //TODO
+    public Integer visit(ExpNot n) {
         int val = n.accept(this);
         return val == 0 ? 1 : 0;
     }
 
-    public Integer visit(ExpOp n) {    //TODO
-        ExpOp.Op op = n.op;
-        Integer exp1 = n.e1.accept(this), exp2 = n.e2.accept(this);
-        switch(op) {
+    public Integer visit(ExpOp n) {
+        int exp1 = n.e1.accept(this), exp2 = n.e2.accept(this);
+        switch (n.op) {
             case AND:
                 return (exp1 & exp2) == exp1 ? TRUE : FALSE;
             case DIV:
-                if (exp2 == 0) 
-                    return Integer.MIN_VALUE;
-
+                if (exp2 == 0) {
+                    throw new MooplRunTimeException("division by zero is undefined");
+                }
                 return exp1 / exp2;
             case EQUALS:
                 return exp1 == exp2 ? TRUE : FALSE;
@@ -158,47 +165,88 @@ public class Interpreter extends VisitorAdapter<Integer> {
         }
     }
 
-    public Integer visit(ExpSelf n) {    //TODO
-        return mooplRunTime.getFrameEntry(-2);
+    public Integer visit(ExpSelf n) {
+        return mooplRunTime.getFrameEntry(SELF);
     }
 
-   
-
-    public Integer visit(ExpVar n) {    //TODO
-        
-        return -1;
+    public Integer visit(ExpVar n) {
+        if (n.v.isStackAllocated) {
+            return mooplRunTime.getFrameEntry(n.v.offset);
+        } else {
+            MooplObject mo = mooplRunTime.deref(mooplRunTime.getFrameEntry(SELF));
+            return mo.elements[n.v.offset];
+        }
     }
 
     /*======================================*/
  /* Statement visitors (all return null) */
  /*======================================*/
-    public Integer visit(StmArrayAssign n) {    //TODO
-        return null;
-    }
-
-    public Integer visit(StmAssign n) {    //TODO
-
-        return null;
-    }
-
-    public Integer visit(StmBlock n) {    //TODO
-
-        return null;
-    }
-
-    public Integer visit(StmCall n) {    //TODO
-
-        return null;
-    }
-
-    public Integer visit(StmIf n) {    //TODO
-
-        return null;
-    }
-
     public Integer visit(StmOutput n) {
         int v = n.e.accept(this);
         System.out.println(v);
+        return null;
+    }
+
+    public Integer visit(StmArrayAssign n) {
+        int idx = n.e2.accept(this);
+        int val = n.e3.accept(this);
+
+        MooplObject array = mooplRunTime.deref(n.e1.accept(this));
+        array.elements[idx] = val;
+        return null;
+    }
+
+    public Integer visit(StmAssign n) {
+        int value = n.e.accept(this);
+        if (n.v.isStackAllocated) {
+            mooplRunTime.setFrameEntry(n.v.offset, value);
+        } else {
+            MooplObject mo = mooplRunTime.deref(mooplRunTime.getFrameEntry(SELF));
+            mo.elements[n.v.offset] = value;
+        }
+        return null;
+    }
+
+    public Integer visit(StmBlock n) { //TODO
+        for (Stm s : n.ss) {
+            s.accept(this);
+        }
+        return null;
+    }
+
+    public Integer visit(StmCall n) {
+        call(n.e.accept(this), n.id, n.es, n.getClass());
+        return null;
+    }
+
+    public Integer visit(StmIf n) { //TODO
+        if (n.e.accept(this) == TRUE) {
+            n.b1.accept(this);
+        } else {
+            n.b2.accept(this);
+        }
+        return null;
+    }
+
+    public Integer visit(StmVarDecl n) {  //TODO
+        if (n.t instanceof TypeArray) {
+
+        } else if (n.t instanceof TypeBoolean) {
+
+        } else if (n.t instanceof TypeInt) {
+
+        } else if (n.t instanceof TypeClassType) {
+
+        }
+        return null;
+    }
+
+    public Integer visit(StmWhile n) { //TODO      
+        List<Stm> statements = n.b.ss;
+        for (int i = 0; n.e.accept(this) == TRUE || ++i < statements.size();) {
+            statements.get(i).accept(this);
+        }
+
         return null;
     }
 
@@ -245,5 +293,33 @@ public class Interpreter extends VisitorAdapter<Integer> {
     public Integer visit(IEval n) {
         System.out.println(n.e.accept(this));
         return null;
+    }
+
+    //convenience methods
+    private Integer call(int address, String id, List<Exp> es, Class callType) {
+        MooplObject mo = mooplRunTime.deref(address);
+
+        List<Integer> params = es.stream()
+                .map(e_ -> e_.accept(this))
+                .collect(Collectors.toList());
+        String classType = mo.type.toString();
+
+        MethodSignature methodSig = symTab.getClassSignature(classType)
+                .getMethodSignature(id);
+        MethodDecl methodDecl = methodSig.getMethodDecl();
+
+        mooplRunTime.pushFrame(address, params, methodDecl.stackAllocation);
+        for (Stm s : methodDecl.ss) {
+            s.accept(this);
+        }
+
+        //get return value only if input is an exp call
+        Integer retVal = null;
+        if (callType.equals(ExpCall.class)) {
+            retVal = methodDecl.accept(this);
+        }
+
+        mooplRunTime.popFrame();
+        return retVal;
     }
 }

@@ -1,0 +1,27 @@
+proc main() {
+  // print 0
+  Counter count;
+  count = new object Counter(12);
+  count.click();
+  output count.getCount();
+}
+
+class Counter {
+
+  int count;
+
+  proc Counter(int x) {
+    count = x;
+    //count = 0;
+  }
+
+  proc click() {
+    count = count + 1;
+    output self.getCount();
+  }
+
+  fun int getCount() {
+    return count;
+  }
+
+}

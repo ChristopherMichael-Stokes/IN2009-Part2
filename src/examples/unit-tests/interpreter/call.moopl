@@ -1,0 +1,35 @@
+proc main() {
+  OneMethod o;
+  if (isnull o) then {
+    output 1;
+  } else {
+    output 0;
+  }
+  o = new object OneMethod();
+  o.test(0);
+}
+
+class OneMethod {
+
+  int field;
+
+  proc OneMethod() {
+    field = 2;
+    output 90;
+  }
+
+  proc test(int x) {
+    output 10;
+    output self.decrement(x);
+    output self.increment(x);
+  }
+
+  fun int decrement(int a) {
+    return a - 1;
+  }
+
+  fun int increment(int b) {
+    return b + 1;
+  }
+
+}

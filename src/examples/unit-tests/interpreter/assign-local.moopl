@@ -1,6 +1,16 @@
 proc main() {
   // print 99
   int x;
+  int y;
   x = 99;
-  output x;
+  y = 12;
+  boolean a;
+  a = true;
+  if (a == true) then {
+    output 1;
+  } else {
+    output 0;
+  }
+    
+  output y;
 }
