@@ -1,0 +1,46 @@
+proc main() {
+  C c; c = new object C(2);
+  output c.getA();
+  output c.getB();
+  output c.getC();
+
+}
+
+class A {
+  int a;
+
+  proc A(int x) {
+    a = x; 
+  }
+
+  fun int getA() {
+    return a;
+  }
+}
+
+class B extends A{
+  int b;
+
+  proc B(int x) {
+    self.A(x);
+    b = x * 2; 
+  }
+
+  fun int getB() {
+    return b;
+  }
+
+}
+
+class C extends B {
+  int c;
+
+  proc C(int x) {
+    self.B(x);
+    c = x * 4; 
+  }
+
+  fun int getC() {
+    return c;
+  }
+}

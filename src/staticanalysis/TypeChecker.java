@@ -254,10 +254,10 @@ public class TypeChecker extends VisitorAdapter<Type> {
         for (FieldDecl fd : n.fds) {
             fd.accept(this);
         }
-//        currentClassName = n.pid;
-//        for (FieldDecl fd : n.fds) {
-//            fd.accept(this);
-//        }
+        currentClassName = n.pid;
+        for (FieldDecl fd : n.fds) {
+            fd.accept(this);
+        }
         currentClassName = n.id;
         for (MethodDecl md : n.mds) {
             md.accept(this);

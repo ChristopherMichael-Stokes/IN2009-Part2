@@ -181,7 +181,6 @@ public class Interpreter extends VisitorAdapter<Integer> {
             return mooplRunTime.getFrameEntry(n.v.offset);
         } else {
             MooplObject mo = mooplRunTime.deref(mooplRunTime.getFrameEntry(SELF));
-
             return mo.elements[n.v.offset];
         }
     }
@@ -307,13 +306,14 @@ public class Interpreter extends VisitorAdapter<Integer> {
     private Integer call(int address, String id, List<Exp> es, Class callType) {
         MooplObject mo = mooplRunTime.deref(address);
 
-//        List<Integer> params = es.stream()
-//                .map(e_ -> e_.accept(this))
-//                .collect(Collectors.toList());
-        List<Integer> params = new LinkedList<>();
-        for (Exp e_ : es) {
-            params.add(e_.accept(this));
-        }
+        //stream of list should always be sequential, possibly redundant op
+        List<Integer> params = es.stream().sequential()
+                .map(e_ -> e_.accept(this))
+                .collect(Collectors.toList());
+//        List<Integer> params = new LinkedList<>();
+//        for (Exp e_ : es) {
+//            params.add(e_.accept(this));
+//        }
         String classType = mo.type.toString();
 
         ClassSignature classSignature = symTab.getClassSignature(classType);

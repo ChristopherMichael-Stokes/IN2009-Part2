@@ -52,7 +52,9 @@ public class VarAllocator extends VisitorAdapter<Void> {
                 fieldHierarchy.addAll(classSig.getImmediateFieldNames());
             } while ((currentClassName_ = classSig.getParentName()) != null);
 
-            int offset = fieldHierarchy.indexOf(v.id);
+            //ensure that there can never be a negative index
+            int elements = fieldHierarchy.size(), index = fieldHierarchy.lastIndexOf(v.id), 
+                    offset = elements > 1 ? elements - 1 - index : index;
             v.offset = offset;
 
 //                while ((offset = classSig.getImmediateFieldNames().lastIndexOf(v)) != -1) {
@@ -96,14 +98,16 @@ public class VarAllocator extends VisitorAdapter<Void> {
     // List<FieldDecl> fds;
     // List<MethodDecl> mds;
     public Void visit(ClassDeclExtends n) {
-        //does not work with fields
+        currentClassName = n.pid;
+        for (MethodDecl md : n.mds) {
+            md.accept(this);
+        }
         currentClassName = n.id;
         for (MethodDecl md : n.mds) {
             md.accept(this);
         }
         
         return null;
-
 //        throw new StaticAnalysisException("Basic var allocator does not support inheritance", n.getTags());
     }
 

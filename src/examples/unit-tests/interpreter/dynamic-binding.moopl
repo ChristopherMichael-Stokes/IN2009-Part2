@@ -1,0 +1,37 @@
+proc main() {
+  int x; x = 2;
+  A a1; a1 = new object A(x);
+  A a; a = new object B(x);
+  output a1.getA();
+  output a.getA();
+}
+
+class A {
+  int a;
+
+  proc A(int x) {
+    a = x;
+  }
+
+  fun int getA() {
+    return a;
+  }
+}
+
+class B extends A {
+  int b;
+
+  proc B(int x) {
+    self.A(x);
+    b = x * 2;
+  }
+
+  fun int getB() {
+    return b;
+  }
+
+  fun int getA() {
+    return a * 2;
+  }
+
+}

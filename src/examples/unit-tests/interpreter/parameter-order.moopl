@@ -1,0 +1,17 @@
+proc main() {
+  Foo foo; foo = new object Foo(1, 2, 3, 4, 5, 6);
+
+}
+
+class Foo {
+
+  proc Foo(int a, int b, int c, int d, int e, int f) {
+    output a;
+    output b;
+    output c;
+    output d;
+    output e;
+    output f;
+  }
+
+}
