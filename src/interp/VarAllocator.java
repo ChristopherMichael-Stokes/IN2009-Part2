@@ -11,7 +11,8 @@ import syntaxtree.interp.IEval;
 import visitor.VisitorAdapter;
 
 /**
- * Classify all Vars as stack or heap allocated and annotate with the correct integer offsets.
+ * Classify all Vars as stack or heap allocated and annotate with the correct
+ * integer offsets.
  */
 public class VarAllocator extends VisitorAdapter<Void> {
 
@@ -40,8 +41,30 @@ public class VarAllocator extends VisitorAdapter<Void> {
         } else {
             // v is a field
             v.isStackAllocated = false;
-            ClassSignature classSig = symTab.getClassSignature(currentClassName);
-            v.offset = classSig.getImmediateFieldNames().lastIndexOf(v.id);
+            ClassSignature classSig;
+            List<String> fieldHierarchy = new LinkedList<>();
+
+            //find all fields in the hierarchy, could be optimised to stop
+            //when field is found
+            String currentClassName_ = currentClassName;
+            do {
+                classSig = symTab.getClassSignature(currentClassName_);
+                fieldHierarchy.addAll(classSig.getImmediateFieldNames());
+            } while ((currentClassName_ = classSig.getParentName()) != null);
+
+            int offset = fieldHierarchy.indexOf(v.id);
+            v.offset = offset;
+
+//                while ((offset = classSig.getImmediateFieldNames().lastIndexOf(v)) != -1) {
+//                    if (classSig.getParentName() == null) {
+//                        throw new MooplRunTimeException("Cannot find field in parents");
+//                    }
+//                    int currentOffset = classSig.getImmediateFieldCount() - 1;
+//                    classSig = symTab.getClassSignature(classSig.getParentName());
+//
+//                }
+            System.err.println(v.offset);
+
         }
     }
 
@@ -73,7 +96,15 @@ public class VarAllocator extends VisitorAdapter<Void> {
     // List<FieldDecl> fds;
     // List<MethodDecl> mds;
     public Void visit(ClassDeclExtends n) {
-        throw new StaticAnalysisException("Basic var allocator does not support inheritance", n.getTags());
+        //does not work with fields
+        currentClassName = n.id;
+        for (MethodDecl md : n.mds) {
+            md.accept(this);
+        }
+        
+        return null;
+
+//        throw new StaticAnalysisException("Basic var allocator does not support inheritance", n.getTags());
     }
 
     // Type t;
@@ -269,8 +300,8 @@ public class VarAllocator extends VisitorAdapter<Void> {
     }
 
     /*===================*/
-    /* ICommand visitors */
-    /*===================*/
+ /* ICommand visitors */
+ /*===================*/
     // String id
     // List<Exp> es
     public Void visit(ICall n) {

@@ -21,12 +21,12 @@ public class TypeChecker extends VisitorAdapter<Type> {
      * A symbol table of class and method signatures.
      */
     private SymbolTable symbolTable;
-    
+
     /**
      * The name of the class currently being type checked.
      */
     private String currentClassName;
-    
+
     /**
      * A stack of tables mapping the local variables/parameters currently in
      * scope to their types.
@@ -105,19 +105,24 @@ public class TypeChecker extends VisitorAdapter<Type> {
                 return t;
             }
         }
-        ClassSignature currentClassSig = symbolTable.getClassSignature(currentClassName);
-        t = currentClassSig.getFieldType(name);
-        if (t != null) {
-            return t;
-        }
+        ClassSignature currentClassSig;
+        String currentClassName_ = currentClassName;
+        do {
+            currentClassSig = symbolTable.getClassSignature(currentClassName_);
+            t = currentClassSig.getFieldType(name);
+            if (t != null) {
+                return t;
+            }
+            
+        } while ((currentClassName_ = currentClassSig.getParentName()) != null);
+
         throw new TypeCheckingException("No declaration found for variable: " + name, v.getTags());
     }
 
     /**
-     * Check if a type is defined. All primitive types are defined.
-     * A TypeClassType type is defined iff the named class has an entry in the
-     * symbol table.
-     * An Array type is defined iff its element type is defined.
+     * Check if a type is defined. All primitive types are defined. A
+     * TypeClassType type is defined iff the named class has an entry in the
+     * symbol table. An Array type is defined iff its element type is defined.
      *
      * @param t the type to check
      * @throws TypeCheckingException if t is (or contains) a TypeClassType and
@@ -133,7 +138,7 @@ public class TypeChecker extends VisitorAdapter<Type> {
             checkIsDefinedType(((TypeArray) t).t);
         }
     }
-    
+
     // check that target has Object type
     private String findCallTargetClass(Exp target) {
         Type targetType = target.accept(this);
@@ -142,14 +147,24 @@ public class TypeChecker extends VisitorAdapter<Type> {
         }
         return ((TypeClassType) targetType).id;
     }
-    
+
     private Type checkCall(List<String> tags, String className, String methodName, List<Exp> actuals) {
         String msgName = methodName;
-        if (className != null) msgName = className + "." + msgName;
-        
+        if (className != null) {
+            msgName = className + "." + msgName;
+        }
+
         // check that target class does provide named method
-        ClassSignature classSig = symbolTable.getClassSignature(className);
-        MethodSignature methodSig = classSig.getMethodSignature(methodName);
+        ClassSignature classSig;
+        MethodSignature methodSig = null;
+
+        do {
+            classSig = symbolTable.getClassSignature(className);
+            methodSig = classSig.getMethodSignature(methodName);
+        } while (methodSig == null && (className = classSig.getParentName()) != null);
+//        ClassSignature classSig = symbolTable.getClassSignature(className);
+//        MethodSignature methodSig = classSig.getMethodSignature(methodName);
+//        
         if (methodSig == null) {
             throw new TypeCheckingException("Method " + msgName + " is not defined", tags);
         }
@@ -175,10 +190,12 @@ public class TypeChecker extends VisitorAdapter<Type> {
         // if we get this far, it is a valid method call
         return methodSig.getReturnType();
     }
-    
+
     private String ordinalString(int i) {
         switch (i) {
-            case 11: case 12: case 13:
+            case 11:
+            case 12:
+            case 13:
                 return i + "th";
             default:
                 switch (i % 10) {
@@ -201,7 +218,6 @@ public class TypeChecker extends VisitorAdapter<Type> {
     /**
      * *****************
      */
-    
     // List<ProcDecl> pds;
     // List<ClassDecl> cds;
     public Type visit(Program n) {
@@ -234,7 +250,24 @@ public class TypeChecker extends VisitorAdapter<Type> {
     // List<FieldDecl> fds;
     // List<MethodDecl> mds;
     public Type visit(ClassDeclExtends n) {
-        throw new StaticAnalysisException("Basic type checker does not support inheritance.", n.getTags());
+        currentClassName = n.id;
+        for (FieldDecl fd : n.fds) {
+            fd.accept(this);
+        }
+//        currentClassName = n.pid;
+//        for (FieldDecl fd : n.fds) {
+//            fd.accept(this);
+//        }
+        currentClassName = n.id;
+        for (MethodDecl md : n.mds) {
+            md.accept(this);
+        }
+//        currentClassName = n.pid;
+//        for (MethodDecl md : n.mds) {
+//            md.accept(this);
+//        }
+        return null;
+//        throw new StaticAnalysisException("Basic type checker does not support inheritance.", n.getTags());
     }
 
     // Type t;
@@ -302,9 +335,8 @@ public class TypeChecker extends VisitorAdapter<Type> {
     }
 
     /*======================================*/
-    /* Statement visitors (all return null) */
-    /*======================================*/
-    
+ /* Statement visitors (all return null) */
+ /*======================================*/
     // Type t
     // String id
     public Type visit(StmVarDecl n) {
@@ -312,7 +344,7 @@ public class TypeChecker extends VisitorAdapter<Type> {
         addLocal(n.id, n.t, n.getTags());
         return null;
     }
-    
+
     // Exp e;
     // String id;
     // List<Exp> es;
@@ -321,7 +353,7 @@ public class TypeChecker extends VisitorAdapter<Type> {
         checkCall(n.getTags(), cname, n.id, n.es);
         return null;
     }
-    
+
     // Exp e;
     // StmBlock b1,b2;
     public Type visit(StmIf n) {
@@ -369,7 +401,7 @@ public class TypeChecker extends VisitorAdapter<Type> {
             throw new TypeCheckingException("The array expression in an array assignment"
                     + " must be of array type", n.e1.getTags());
         }
-        Type elementType = ((TypeArray)arrayType).t;
+        Type elementType = ((TypeArray) arrayType).t;
         if (!(n.e2.accept(this).equals(TYPE_INT))) {
             throw new TypeCheckingException("The index expression in an array assignment"
                     + " must be of type int", n.e2.getTags());
@@ -393,9 +425,8 @@ public class TypeChecker extends VisitorAdapter<Type> {
     }
 
     /*=========================================*/
-    /* Expression visitors (all return a Type) */
-    /*=========================================*/
-    
+ /* Expression visitors (all return a Type) */
+ /*=========================================*/
     // Exp e1, e2;
     // ExpOp.Op op;
     public Type visit(ExpOp n) {
@@ -443,7 +474,7 @@ public class TypeChecker extends VisitorAdapter<Type> {
             case EQUALS:
                 Type t1 = n.e1.accept(this);
                 Type t2 = n.e2.accept(this);
-                if (!symbolTable.isSupertype(t1, t2) && !symbolTable.isSupertype(t2,t1)) {
+                if (!symbolTable.isSupertype(t1, t2) && !symbolTable.isSupertype(t2, t1)) {
                     errmsg = "Arguments to == must have a common subtype";
                 }
                 break;
@@ -466,7 +497,7 @@ public class TypeChecker extends VisitorAdapter<Type> {
         if (!(n.e2.accept(this).equals(TYPE_INT))) {
             throw new TypeCheckingException("ArrayLookup index must be of type integer", n.e2.getTags());
         }
-        return ((TypeArray)arrayType).t;
+        return ((TypeArray) arrayType).t;
     }
 
     // Exp e;
@@ -552,17 +583,15 @@ public class TypeChecker extends VisitorAdapter<Type> {
     }
 
     /*=====================================*/
-    /* ICommand visitors (all return null) */
-    /*=====================================*/
-    
-    
+ /* ICommand visitors (all return null) */
+ /*=====================================*/
     // String id
     // List<Exp> es
     public Type visit(ICall n) {
         checkCall(n.getTags(), null, n.id, n.es);
         return null;
     }
-    
+
     // Exp e
     public Type visit(IEval n) {
         n.e.accept(this);

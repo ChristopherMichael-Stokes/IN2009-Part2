@@ -9,9 +9,12 @@ proc main() {
 class Counter {
 
   int count;
+  int a;
+  int b;
 
   proc Counter(int x) {
     count = x;
+    
     //count = 0;
   }
 

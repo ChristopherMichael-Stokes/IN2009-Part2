@@ -1,0 +1,38 @@
+proc main() {
+  Foo foo; foo = new object Foo(10);
+  output foo.getA();
+  output foo.getB();
+}
+
+class Bar {
+  int a;
+  
+  proc Bar(int x) {
+    a = x;
+  }
+
+  fun int getA() {
+    return a;
+  }
+
+  proc setA(int x) {
+    a = x;
+  }
+
+}
+
+class Foo extends Bar {
+  int b;
+  
+  proc Foo(int x) {
+    self.Bar(x);
+    b = x * 10;
+  }
+  fun int getB() {
+    return b;
+  }
+
+  proc setB(int x) {
+    b = x;
+  }
+}

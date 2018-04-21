@@ -1,0 +1,10 @@
+proc main() {
+  int x;
+  while (x < 10) do {
+    int y; y = x + 1;
+    x = 100;
+    x = y;
+    output y;
+  }
+
+}

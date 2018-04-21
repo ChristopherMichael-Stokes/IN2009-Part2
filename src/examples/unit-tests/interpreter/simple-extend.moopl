@@ -1,0 +1,40 @@
+proc main() {
+  B bar; bar = new object B();
+  bar.c();
+  bar.d();
+
+}
+
+class A {
+  int a;
+
+  proc A() {
+    a = 1;
+    output a;
+  }
+  
+  proc c() {
+    output 3;
+  }
+}
+
+
+class B extends A {
+  int b;
+
+  proc B() {
+    self.A();
+    b = 2;
+    output b;
+    
+  }
+
+  proc d() {
+    output 4;
+  }
+
+}
+
+
+
+
