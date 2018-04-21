@@ -1,6 +1,5 @@
 package interp;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -125,7 +124,15 @@ public class Interpreter extends VisitorAdapter<Integer> {
     }
 
     public Integer visit(ExpNewObject n) {
-        Integer address = mooplRunTime.allocClassInstance(n.es.size(), n.id);
+        String currentClassName = n.id;
+        ClassSignature classSig;
+        int fieldCount = 0;
+        do {
+            classSig = symTab.getClassSignature(currentClassName);
+            fieldCount += classSig.getImmediateFieldCount();
+        } while ((currentClassName = classSig.getParentName()) != null);
+        
+        Integer address = mooplRunTime.allocClassInstance(fieldCount, n.id);
         MooplObject mo = mooplRunTime.deref(address);
         String classType = mo.type.toString();
 
@@ -136,8 +143,8 @@ public class Interpreter extends VisitorAdapter<Integer> {
     }
 
     public Integer visit(ExpNot n) {
-        int val = n.accept(this);
-        return val == 0 ? 1 : 0;
+        int val = n.e.accept(this);
+        return val == FALSE ? TRUE : FALSE;
     }
 
     public Integer visit(ExpOp n) {
@@ -174,6 +181,7 @@ public class Interpreter extends VisitorAdapter<Integer> {
             return mooplRunTime.getFrameEntry(n.v.offset);
         } else {
             MooplObject mo = mooplRunTime.deref(mooplRunTime.getFrameEntry(SELF));
+
             return mo.elements[n.v.offset];
         }
     }
@@ -295,17 +303,32 @@ public class Interpreter extends VisitorAdapter<Integer> {
         return null;
     }
 
-    //convenience methods
+    //convenience method to reduce code
     private Integer call(int address, String id, List<Exp> es, Class callType) {
         MooplObject mo = mooplRunTime.deref(address);
 
-        List<Integer> params = es.stream()
-                .map(e_ -> e_.accept(this))
-                .collect(Collectors.toList());
+//        List<Integer> params = es.stream()
+//                .map(e_ -> e_.accept(this))
+//                .collect(Collectors.toList());
+        List<Integer> params = new LinkedList<>();
+        for (Exp e_ : es) {
+            params.add(e_.accept(this));
+        }
         String classType = mo.type.toString();
 
-        MethodSignature methodSig = symTab.getClassSignature(classType)
-                .getMethodSignature(id);
+        ClassSignature classSignature = symTab.getClassSignature(classType);
+        MethodSignature methodSig = classSignature.getMethodSignature(id);
+
+        //attempt to find signature from super type
+        while (methodSig == null) {
+            String parent = classSignature.getParentName();
+            if (parent == null) {
+                throw new MooplRunTimeException("cannot find method signature in inheritance hierarchy");
+            }
+
+            classSignature = symTab.getClassSignature(parent);
+            methodSig = classSignature.getMethodSignature(id);
+        }
         MethodDecl methodDecl = methodSig.getMethodDecl();
 
         mooplRunTime.pushFrame(address, params, methodDecl.stackAllocation);
@@ -318,8 +341,8 @@ public class Interpreter extends VisitorAdapter<Integer> {
         if (callType.equals(ExpCall.class)) {
             retVal = methodDecl.accept(this);
         }
-
         mooplRunTime.popFrame();
+
         return retVal;
     }
 }
