@@ -103,7 +103,7 @@ public class Interpreter extends VisitorAdapter<Integer> {
     }
 
     public Integer visit(ExpCall n) {
-        return call(n.e.accept(this), n.id, n.es, n.getClass());
+        return call(n.e, n.id, n.es, n.getClass());
     }
 
     public Integer visit(ExpTrue n) {
@@ -127,6 +127,7 @@ public class Interpreter extends VisitorAdapter<Integer> {
         String currentClassName = n.id;
         ClassSignature classSig;
         int fieldCount = 0;
+        //get count of total fields + inherited fields
         do {
             classSig = symTab.getClassSignature(currentClassName);
             fieldCount += classSig.getImmediateFieldCount();
@@ -139,6 +140,12 @@ public class Interpreter extends VisitorAdapter<Integer> {
         //call constructor 
         //constructor is a proc, so pass a StmCall
         call(address, mo.type.toString(), n.es, StmCall.class);
+        System.err.print(n.id+"[ ");
+        for (int i : mo.elements) {
+            System.err.print(i+" ");
+        }
+        System.err.print(" ]\n");
+        
         return address;
     }
 
@@ -151,7 +158,9 @@ public class Interpreter extends VisitorAdapter<Integer> {
         int exp1 = n.e1.accept(this), exp2 = n.e2.accept(this);
         switch (n.op) {
             case AND:
-                return (exp1 & exp2) == exp1 ? TRUE : FALSE;
+                //binary and should work, no matter the values of true or false
+                //otherwise (exp1 & exp2) == TRUE ? TRUE : FALSE; would work
+                return exp1 & exp2;
             case DIV:
                 if (exp2 == 0) {
                     throw new MooplRunTimeException("division by zero is undefined");
@@ -168,7 +177,8 @@ public class Interpreter extends VisitorAdapter<Integer> {
             case TIMES:
                 return exp1 * exp2;
             default:
-                return -1;
+                throw new MooplRunTimeException("handling for op "+n.op.name()
+                        +" has not been implemented in this compiler version");
         }
     }
 
@@ -223,7 +233,7 @@ public class Interpreter extends VisitorAdapter<Integer> {
     }
 
     public Integer visit(StmCall n) {
-        call(n.e.accept(this), n.id, n.es, n.getClass());
+        call(n.e, n.id, n.es, n.getClass());
         return null;
     }
 
@@ -303,10 +313,17 @@ public class Interpreter extends VisitorAdapter<Integer> {
     }
 
     //convenience method to reduce code
+    private Integer call(Exp e, String id, List<Exp> es, Class callType) {
+        int address = e.accept(this);
+        if (address == NULL) {
+            throw new MooplRunTimeException("null pointer exception, attempting"
+                    + " to call method \""+id+"\" on an uninitalized object "
+                    + e.getTags());
+        }
+        return call(address, id, es, callType);
+    }
+    
     private Integer call(int address, String id, List<Exp> es, Class callType) {
-        if (address == NULL) 
-            throw new MooplRunTimeException("null pointer exception");
-            
         MooplObject mo = mooplRunTime.deref(address);
         
 //        //stream of list should always be sequential, possibly redundant op
@@ -327,6 +344,7 @@ public class Interpreter extends VisitorAdapter<Integer> {
         while (methodSig == null) {
             String parent = classSignature.getParentName();
             if (parent == null) {
+                //type checker should throw an error before this occurs, so pointless to check
                 throw new MooplRunTimeException("cannot find method signature in inheritance hierarchy");
             }
 
