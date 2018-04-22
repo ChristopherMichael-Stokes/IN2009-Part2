@@ -140,11 +140,8 @@ public class Interpreter extends VisitorAdapter<Integer> {
         //call constructor 
         //constructor is a proc, so pass a StmCall
         call(address, mo.type.toString(), n.es, StmCall.class);
-        System.err.print(n.id+"[ ");
         for (int i : mo.elements) {
-            System.err.print(i+" ");
         }
-        System.err.print(" ]\n");
         
         return address;
     }
