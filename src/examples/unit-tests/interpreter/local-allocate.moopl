@@ -1,0 +1,9 @@
+proc main() {
+  int a; a = 1;
+  int b; b = 2;
+  { int c; c = 3; b = 4; int d; d = 2;}
+  a = a - 1;
+  { int b; b = a; int d; d = b * 2; a = d; }
+  output a;
+  output b;
+}

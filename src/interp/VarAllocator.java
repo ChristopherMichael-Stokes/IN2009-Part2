@@ -15,6 +15,8 @@ import visitor.VisitorAdapter;
  * integer offsets.
  */
 public class VarAllocator extends VisitorAdapter<Void> {
+    
+    private int maxAllocs = 0, blockAllocs = 0;
 
     SymbolTable symTab;
 
@@ -37,7 +39,7 @@ public class VarAllocator extends VisitorAdapter<Void> {
         } else if (currentLocals.contains(v.id)) {
             // v is a local variable
             v.isStackAllocated = true;
-            v.offset = 1 + currentLocals.indexOf(v.id);
+            v.offset = 1 + currentLocals.lastIndexOf(v.id);
         } else {
             // v is a field
             v.isStackAllocated = false;
@@ -57,15 +59,6 @@ public class VarAllocator extends VisitorAdapter<Void> {
                     offset = elements > 1 ? elements - 1 - index : index;
             v.offset = offset;
 
-//                while ((offset = classSig.getImmediateFieldNames().lastIndexOf(v)) != -1) {
-//                    if (classSig.getParentName() == null) {
-//                        throw new MooplRunTimeException("Cannot find field in parents");
-//                    }
-//                    int currentOffset = classSig.getImmediateFieldCount() - 1;
-//                    classSig = symTab.getClassSignature(classSig.getParentName());
-//
-//                }
-            System.err.println(v.offset);
 
         }
     }
@@ -123,8 +116,7 @@ public class VarAllocator extends VisitorAdapter<Void> {
     // List<Stm> ss;
     // Exp e;
     public Void visit(FunDecl n) {
-        currentParameters.clear();
-        currentLocals.clear();
+        clearVars();
         for (Formal f : n.fs) {
             currentParameters.add(f.id);
         }
@@ -132,7 +124,7 @@ public class VarAllocator extends VisitorAdapter<Void> {
             s.accept(this);
         }
         n.e.accept(this);
-        n.stackAllocation = currentLocals.size();
+        n.stackAllocation = maxAllocs;
         return null;
     }
 
@@ -140,22 +132,30 @@ public class VarAllocator extends VisitorAdapter<Void> {
     // List<Formal> fs;
     // List<Stm> ss;
     public Void visit(ProcDecl n) {
-        currentParameters.clear();
-        currentLocals.clear();
+        clearVars();
         for (Formal f : n.fs) {
             currentParameters.add(f.id);
         }
         for (Stm s : n.ss) {
             s.accept(this);
         }
-        n.stackAllocation = currentLocals.size();
+        n.stackAllocation = maxAllocs;
         return null;
     }
 
     // List<Stm> ss;
     public Void visit(StmBlock n) {
+        int allocsBefore = blockAllocs;
         for (Stm s : n.ss) {
             s.accept(this);
+        }
+        
+        int diff = blockAllocs - allocsBefore;
+        blockAllocs = allocsBefore;
+        
+        //remove variables added in current block from current locals
+        for (; diff > 0; --diff) {
+            currentLocals.remove(currentLocals.size() - 1);
         }
         return null;
     }
@@ -163,10 +163,15 @@ public class VarAllocator extends VisitorAdapter<Void> {
     // Type t;
     // String id;
     public Void visit(StmVarDecl n) {
-        if (currentLocals.contains(n.id)) {
-            throw new StaticAnalysisException("Basic variable allocator requires all local variables to have distinct names", n.getTags());
-        }
+        ++blockAllocs;
+//        if (currentLocals.contains(n.id)) {
+//            throw new StaticAnalysisException("Basic variable allocator requires all local variables to have distinct names", n.getTags());
+//        }
         currentLocals.add(n.id);
+        int localCount = currentLocals.size();
+        if (localCount > maxAllocs) {
+            maxAllocs = localCount;
+        }
         return null;
     }
 
@@ -315,6 +320,13 @@ public class VarAllocator extends VisitorAdapter<Void> {
     // Exp e
     public Void visit(IEval n) {
         return null;
+    }
+    
+    private void clearVars(){
+        currentLocals.clear();
+        currentParameters.clear();
+        blockAllocs = 0;
+        maxAllocs = 0;
     }
 
 }

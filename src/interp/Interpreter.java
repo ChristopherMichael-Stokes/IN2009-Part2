@@ -33,7 +33,7 @@ public class Interpreter extends VisitorAdapter<Integer> {
     /**
      * constants
      */
-    private static final int FALSE = 0, TRUE = 1, SELF = -2;
+    private static final int FALSE = 0, TRUE = 1, SELF = -2, NULL = 0;
 
     /**
      * The symbol table.
@@ -115,7 +115,7 @@ public class Interpreter extends VisitorAdapter<Integer> {
     }
 
     public Integer visit(ExpIsnull n) {
-        return n.e.accept(this) == 0 ? TRUE : FALSE;
+        return n.e.accept(this) == NULL ? TRUE : FALSE;
     }
 
     public Integer visit(ExpNewArray n) {
@@ -208,13 +208,14 @@ public class Interpreter extends VisitorAdapter<Integer> {
         if (n.v.isStackAllocated) {
             mooplRunTime.setFrameEntry(n.v.offset, value);
         } else {
-            MooplObject mo = mooplRunTime.deref(mooplRunTime.getFrameEntry(SELF));
+            int address = mooplRunTime.getFrameEntry(SELF);
+            MooplObject mo = mooplRunTime.deref(address);
             mo.elements[n.v.offset] = value;
         }
         return null;
     }
 
-    public Integer visit(StmBlock n) { //TODO
+    public Integer visit(StmBlock n) {
         for (Stm s : n.ss) {
             s.accept(this);
         }
@@ -226,7 +227,7 @@ public class Interpreter extends VisitorAdapter<Integer> {
         return null;
     }
 
-    public Integer visit(StmIf n) { //TODO
+    public Integer visit(StmIf n) {
         if (n.e.accept(this) == TRUE) {
             n.b1.accept(this);
         } else {
@@ -235,7 +236,7 @@ public class Interpreter extends VisitorAdapter<Integer> {
         return null;
     }
 
-    public Integer visit(StmVarDecl n) {  //TODO
+    public Integer visit(StmVarDecl n) { //TODO
         if (n.t instanceof TypeArray) {
 
         } else if (n.t instanceof TypeBoolean) {
@@ -250,10 +251,9 @@ public class Interpreter extends VisitorAdapter<Integer> {
 
     public Integer visit(StmWhile n) { //TODO      
         List<Stm> statements = n.b.ss;
-        for (int i = 0; n.e.accept(this) == TRUE || ++i < statements.size();) {
-            statements.get(i).accept(this);
+        while (n.e.accept(this) == TRUE) {
+            n.b.accept(this);
         }
-
         return null;
     }
 
@@ -284,7 +284,7 @@ public class Interpreter extends VisitorAdapter<Integer> {
         // there is no "self" for a top-level proc, so we pass 0 as an
         // appropriate dummy value (it will never be used)
         mooplRunTime.pushFrame(0, actualValues, procCode.stackAllocation);
-
+        
         // execute the procedure code
         // @see visit(ProcDecl)
         procCode.accept(this);
@@ -304,16 +304,20 @@ public class Interpreter extends VisitorAdapter<Integer> {
 
     //convenience method to reduce code
     private Integer call(int address, String id, List<Exp> es, Class callType) {
+        if (address == NULL) 
+            throw new MooplRunTimeException("null pointer exception");
+            
         MooplObject mo = mooplRunTime.deref(address);
+        
+//        //stream of list should always be sequential, possibly redundant op
+//        List<Integer> params = es.stream().sequential()
+//                .map(e_ -> e_.accept(this))
+//                .collect(Collectors.toList());
 
-        //stream of list should always be sequential, possibly redundant op
-        List<Integer> params = es.stream().sequential()
-                .map(e_ -> e_.accept(this))
-                .collect(Collectors.toList());
-//        List<Integer> params = new LinkedList<>();
-//        for (Exp e_ : es) {
-//            params.add(e_.accept(this));
-//        }
+        List<Integer> params = new LinkedList<>();
+        for (Exp e_ : es) {
+            params.add(e_.accept(this));
+        }
         String classType = mo.type.toString();
 
         ClassSignature classSignature = symTab.getClassSignature(classType);
