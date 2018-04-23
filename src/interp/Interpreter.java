@@ -2,7 +2,6 @@ package interp;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 import staticanalysis.ClassSignature;
 import staticanalysis.MethodSignature;
 import visitor.VisitorAdapter;
@@ -93,11 +92,11 @@ public class Interpreter extends VisitorAdapter<Integer> {
         return n.i;
     }
 
-    public Integer visit(ExpArrayLength n) {
+    public Integer visit(ExpArrayLength n) {        
         return mooplRunTime.deref(n.e.accept(this)).elements.length;
     }
 
-    public Integer visit(ExpArrayLookup n) {
+    public Integer visit(ExpArrayLookup n) {        
         MooplObject array = mooplRunTime.deref(n.e1.accept(this));
         return array.elements[n.e2.accept(this)];
     }

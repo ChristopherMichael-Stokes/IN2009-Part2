@@ -3,7 +3,23 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/examples/unit-tests/interpreter/call.moopl</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/syntaxtree/StmBlock.java</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/staticanalysis/MethodSignature.java</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/syntaxtree/AST.java</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/TypeCheck.java</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/examples/whole-programs/block-structure/BlockStructure.moopl</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/interp/VarAllocator.java</file>
             <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/interp/Interpreter.java</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/examples/whole-programs/inheritance/Animals.moopl</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/staticanalysis/ClassSignature.java</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/interp/MooplObject.java</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/syntaxtree/ExpNewObject.java</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/staticanalysis/SymbolTable.java</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/examples/unit-tests/interpreter/block.moopl</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/staticanalysis/TypeChecker.java</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/examples/whole-programs/inheritance/LinkedList.moopl</file>
+            <file>file:/C:/Users/chris/OneDrive/Modules/Year%202/term%202/Language%20Processors/IN2009-Part2/src/interp/MooplRunTime.java</file>
         </group>
     </open-files>
 </project-private>

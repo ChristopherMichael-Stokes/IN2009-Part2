@@ -1,0 +1,6 @@
+proc main() {
+  arrayof(boolean) b;
+
+  b[10] = false;
+
+}
